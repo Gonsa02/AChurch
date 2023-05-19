@@ -69,37 +69,18 @@ def betaReduction(node):
         return Aplicacio(betaReduction(node.funcio), betaReduction(node.argument))
     elif isinstance(node, Variable):
         return node
-    elif isinstance(node, Root):
-        return Root(betaReduction(node.cos))
     else:
         raise ValueError("Node invalid, ha de ser una aplicació i una abstraccio per fer una β-reducció \
                          i es " + str(type(node)) + " " + str(type(node.funcio)))
 
-def checkBetaReduction(node):
-    if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio):
-        return node
-    elif isinstance(node, Aplicacio):
-        if checkBetaReduction(node.funcio) == None:
-            return checkBetaReduction(node.argument)
-        else:
-            return checkBetaReduction(node.funcio)
-    elif isinstance(node, Variable):
-        return None
-    elif isinstance(node, Root):
-        return checkBetaReduction(node.cos)
-
 def redueix(node, limit):
     if isinstance(node, Root):
         while limit > 0:
-            node_aux = checkBetaReduction(node)
-            if node_aux != None:
-                node_aux = betaReduction(node_aux)
-                print("β-reducció:")
-                print(parenthesize(node) + " → " + parenthesize(node_aux))
-                node = node_aux
+            node_aux = Root(betaReduction(node.cos))
+            print("β-reducció:")
+            print(parenthesize(node) + " → " + parenthesize(node_aux))
+            node = node_aux
             limit -= 1
-        print("Resultat:")
-        print(parenthesize(node))
     else:
         raise ValueError("Node invàlid")
 
