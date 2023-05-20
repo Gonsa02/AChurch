@@ -10,14 +10,16 @@ else:
 
 def serializedATN():
     return [
-        4,1,6,26,2,0,7,0,2,1,7,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,3,1,17,8,1,1,1,1,1,5,1,21,8,1,10,1,12,1,24,9,1,1,1,0,1,2,
-        2,0,2,0,0,26,0,4,1,0,0,0,2,16,1,0,0,0,4,5,3,2,1,0,5,1,1,0,0,0,6,
-        7,6,1,-1,0,7,8,5,1,0,0,8,9,3,2,1,0,9,10,5,2,0,0,10,17,1,0,0,0,11,
-        12,5,5,0,0,12,13,5,4,0,0,13,14,5,3,0,0,14,17,3,2,1,2,15,17,5,4,0,
-        0,16,6,1,0,0,0,16,11,1,0,0,0,16,15,1,0,0,0,17,22,1,0,0,0,18,19,10,
-        4,0,0,19,21,3,2,1,5,20,18,1,0,0,0,21,24,1,0,0,0,22,20,1,0,0,0,22,
-        23,1,0,0,0,23,3,1,0,0,0,24,22,1,0,0,0,2,16,22
+        4,1,6,30,2,0,7,0,2,1,7,1,1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,1,
+        14,8,1,11,1,12,1,15,1,1,1,1,1,1,3,1,21,8,1,1,1,1,1,5,1,25,8,1,10,
+        1,12,1,28,9,1,1,1,0,1,2,2,0,2,0,0,31,0,4,1,0,0,0,2,20,1,0,0,0,4,
+        5,3,2,1,0,5,1,1,0,0,0,6,7,6,1,-1,0,7,8,5,1,0,0,8,9,3,2,1,0,9,10,
+        5,2,0,0,10,21,1,0,0,0,11,13,5,5,0,0,12,14,5,4,0,0,13,12,1,0,0,0,
+        14,15,1,0,0,0,15,13,1,0,0,0,15,16,1,0,0,0,16,17,1,0,0,0,17,18,5,
+        3,0,0,18,21,3,2,1,2,19,21,5,4,0,0,20,6,1,0,0,0,20,11,1,0,0,0,20,
+        19,1,0,0,0,21,26,1,0,0,0,22,23,10,4,0,0,23,25,3,2,1,5,24,22,1,0,
+        0,0,25,28,1,0,0,0,26,24,1,0,0,0,26,27,1,0,0,0,27,3,1,0,0,0,28,26,
+        1,0,0,0,3,15,20,26
     ]
 
 class lcParser ( Parser ):
@@ -154,11 +156,14 @@ class lcParser ( Parser ):
 
         def LAMBDA(self):
             return self.getToken(lcParser.LAMBDA, 0)
-        def LLETRA(self):
-            return self.getToken(lcParser.LLETRA, 0)
         def terme(self):
             return self.getTypedRuleContext(lcParser.TermeContext,0)
 
+        def LLETRA(self, i:int=None):
+            if i is None:
+                return self.getTokens(lcParser.LLETRA)
+            else:
+                return self.getToken(lcParser.LLETRA, i)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitAbstraccio" ):
@@ -195,9 +200,10 @@ class lcParser ( Parser ):
         _prevctx = localctx
         _startState = 2
         self.enterRecursionRule(localctx, 2, self.RULE_terme, _p)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 16
+            self.state = 20
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [1]:
@@ -218,27 +224,37 @@ class lcParser ( Parser ):
                 _prevctx = localctx
                 self.state = 11
                 self.match(lcParser.LAMBDA)
-                self.state = 12
-                self.match(lcParser.LLETRA)
-                self.state = 13
+                self.state = 13 
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while True:
+                    self.state = 12
+                    self.match(lcParser.LLETRA)
+                    self.state = 15 
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
+                    if not (_la==4):
+                        break
+
+                self.state = 17
                 self.match(lcParser.T__2)
-                self.state = 14
+                self.state = 18
                 self.terme(2)
                 pass
             elif token in [4]:
                 localctx = lcParser.VariableContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 15
+                self.state = 19
                 self.match(lcParser.LLETRA)
                 pass
             else:
                 raise NoViableAltException(self)
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 22
+            self.state = 26
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,1,self._ctx)
+            _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt==1:
                     if self._parseListeners is not None:
@@ -246,15 +262,15 @@ class lcParser ( Parser ):
                     _prevctx = localctx
                     localctx = lcParser.AplicacioContext(self, lcParser.TermeContext(self, _parentctx, _parentState))
                     self.pushNewRecursionContext(localctx, _startState, self.RULE_terme)
-                    self.state = 18
+                    self.state = 22
                     if not self.precpred(self._ctx, 4):
                         from antlr4.error.Errors import FailedPredicateException
                         raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
-                    self.state = 19
+                    self.state = 23
                     self.terme(5) 
-                self.state = 24
+                self.state = 28
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,1,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,2,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re

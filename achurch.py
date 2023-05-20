@@ -121,6 +121,12 @@ class PrintVisitor(lcVisitor):
         print('  ' *  self.nivell + variable.getText())
 
 
+def currificar(lambdaSymbol, variables, cos):
+    if len(variables) == 1:
+        return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), cos)
+    else:
+        return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), currificar(lambdaSymbol, variables[1:], cos))
+
 class TreeVisitor(lcVisitor):
 
     def visitRoot(self, ctx):
@@ -137,9 +143,10 @@ class TreeVisitor(lcVisitor):
         return Variable(lletra.getText())
 
     def visitAbstraccio(self, ctx):
-        [lambdaSymbol, lletra, _, terme] = list(ctx.getChildren())
+        lambdaSymbol, terme = list(ctx.getChildren())[0], list(ctx.getChildren())[-1]
+        lletres = list(ctx.LLETRA())
         res = self.visit(terme)
-        return Abstracio(lambdaSymbol.getText(), Variable(lletra.getText()), res)
+        return currificar(lambdaSymbol, lletres, res)
 
     def visitAplicacio(self, ctx):
         [terme1, terme2] = list(ctx.getChildren())
@@ -155,13 +162,13 @@ parser = lcParser(token_stream)
 tree = parser.root()
 if parser.getNumberOfSyntaxErrors() == 0:
     visitor = TreeVisitor()
-    printvisitor = PrintVisitor()
+    #printvisitor = PrintVisitor()
     #print(tree.toStringTree(recog=parser))
-    printvisitor.visit(tree)
+    #printvisitor.visit(tree)
     arbreSemantic = visitor.visit(tree)
     print("Arbre:")
     print(parenthesize(arbreSemantic))
-    redueix(arbreSemantic, 10)
+    #redueix(arbreSemantic, 3)
 else: 
     print(parser.getNumberOfSyntaxErrors(), 'errors de sintaxi.')
     print(tree.toStringTree(recog=parser))
