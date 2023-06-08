@@ -34,6 +34,11 @@ class lcVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by lcParser#infix.
+    def visitInfix(self, ctx:lcParser.InfixContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by lcParser#aplicacio.
     def visitAplicacio(self, ctx:lcParser.AplicacioContext):
         return self.visitChildren(ctx)
@@ -41,6 +46,11 @@ class lcVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by lcParser#assignacio.
     def visitAssignacio(self, ctx:lcParser.AssignacioContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by lcParser#macros.
+    def visitMacros(self, ctx:lcParser.MacrosContext):
         return self.visitChildren(ctx)
 
 

@@ -16,8 +16,8 @@ public class lcLexer extends Lexer {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, T__1=2, T__2=3, MACRO=4, LLETRA=5, LLETRAMAJUSCULA=6, DIGIT=7, 
-		LAMBDA=8, ASSIGNACIO=9, WS=10;
+		T__0=1, T__1=2, T__2=3, MACRO=4, INFIX=5, LLETRA=6, LLETRAMAJUSCULA=7, 
+		DIGIT=8, LAMBDA=9, ASSIGNACIO=10, WS=11;
 	public static String[] channelNames = {
 		"DEFAULT_TOKEN_CHANNEL", "HIDDEN"
 	};
@@ -28,8 +28,8 @@ public class lcLexer extends Lexer {
 
 	private static String[] makeRuleNames() {
 		return new String[] {
-			"T__0", "T__1", "T__2", "MACRO", "LLETRA", "LLETRAMAJUSCULA", "DIGIT", 
-			"LAMBDA", "ASSIGNACIO", "WS"
+			"T__0", "T__1", "T__2", "MACRO", "INFIX", "LLETRA", "LLETRAMAJUSCULA", 
+			"DIGIT", "LAMBDA", "ASSIGNACIO", "WS"
 		};
 	}
 	public static final String[] ruleNames = makeRuleNames();
@@ -42,8 +42,8 @@ public class lcLexer extends Lexer {
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, null, null, "MACRO", "LLETRA", "LLETRAMAJUSCULA", "DIGIT", 
-			"LAMBDA", "ASSIGNACIO", "WS"
+			null, null, null, null, "MACRO", "INFIX", "LLETRA", "LLETRAMAJUSCULA", 
+			"DIGIT", "LAMBDA", "ASSIGNACIO", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -105,22 +105,24 @@ public class lcLexer extends Lexer {
 	public ATN getATN() { return _ATN; }
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2\f\66\b\1\4\2\t\2"+
-		"\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
-		"\t\13\3\2\3\2\3\3\3\3\3\4\3\4\3\5\3\5\3\5\7\5!\n\5\f\5\16\5$\13\5\3\6"+
-		"\3\6\3\7\3\7\3\b\3\b\3\t\3\t\3\n\3\n\3\13\6\13\61\n\13\r\13\16\13\62\3"+
-		"\13\3\13\2\2\f\3\3\5\4\7\5\t\6\13\7\r\b\17\t\21\n\23\13\25\f\3\2\b\3\2"+
-		"c|\3\2C\\\3\2\62;\4\2^^\u03bd\u03bd\4\2??\u2263\u2263\5\2\13\f\17\17\""+
-		"\"\28\2\3\3\2\2\2\2\5\3\2\2\2\2\7\3\2\2\2\2\t\3\2\2\2\2\13\3\2\2\2\2\r"+
-		"\3\2\2\2\2\17\3\2\2\2\2\21\3\2\2\2\2\23\3\2\2\2\2\25\3\2\2\2\3\27\3\2"+
-		"\2\2\5\31\3\2\2\2\7\33\3\2\2\2\t\35\3\2\2\2\13%\3\2\2\2\r\'\3\2\2\2\17"+
-		")\3\2\2\2\21+\3\2\2\2\23-\3\2\2\2\25\60\3\2\2\2\27\30\7*\2\2\30\4\3\2"+
-		"\2\2\31\32\7+\2\2\32\6\3\2\2\2\33\34\7\60\2\2\34\b\3\2\2\2\35\"\5\r\7"+
-		"\2\36!\5\r\7\2\37!\5\17\b\2 \36\3\2\2\2 \37\3\2\2\2!$\3\2\2\2\" \3\2\2"+
-		"\2\"#\3\2\2\2#\n\3\2\2\2$\"\3\2\2\2%&\t\2\2\2&\f\3\2\2\2\'(\t\3\2\2(\16"+
-		"\3\2\2\2)*\t\4\2\2*\20\3\2\2\2+,\t\5\2\2,\22\3\2\2\2-.\t\6\2\2.\24\3\2"+
-		"\2\2/\61\t\7\2\2\60/\3\2\2\2\61\62\3\2\2\2\62\60\3\2\2\2\62\63\3\2\2\2"+
-		"\63\64\3\2\2\2\64\65\b\13\2\2\65\26\3\2\2\2\6\2 \"\62\3\b\2\2";
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\2\r:\b\1\4\2\t\2\4"+
+		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
+		"\13\4\f\t\f\3\2\3\2\3\3\3\3\3\4\3\4\3\5\3\5\3\5\7\5#\n\5\f\5\16\5&\13"+
+		"\5\3\6\3\6\3\7\3\7\3\b\3\b\3\t\3\t\3\n\3\n\3\13\3\13\3\f\6\f\65\n\f\r"+
+		"\f\16\f\66\3\f\3\f\2\2\r\3\3\5\4\7\5\t\6\13\7\r\b\17\t\21\n\23\13\25\f"+
+		"\27\r\3\2\t\13\2%(,-/\61<<>>@B``~~\u0080\u0080\3\2c|\3\2C\\\3\2\62;\4"+
+		"\2^^\u03bd\u03bd\4\2??\u2263\u2263\5\2\13\f\17\17\"\"\2<\2\3\3\2\2\2\2"+
+		"\5\3\2\2\2\2\7\3\2\2\2\2\t\3\2\2\2\2\13\3\2\2\2\2\r\3\2\2\2\2\17\3\2\2"+
+		"\2\2\21\3\2\2\2\2\23\3\2\2\2\2\25\3\2\2\2\2\27\3\2\2\2\3\31\3\2\2\2\5"+
+		"\33\3\2\2\2\7\35\3\2\2\2\t\37\3\2\2\2\13\'\3\2\2\2\r)\3\2\2\2\17+\3\2"+
+		"\2\2\21-\3\2\2\2\23/\3\2\2\2\25\61\3\2\2\2\27\64\3\2\2\2\31\32\7*\2\2"+
+		"\32\4\3\2\2\2\33\34\7+\2\2\34\6\3\2\2\2\35\36\7\60\2\2\36\b\3\2\2\2\37"+
+		"$\5\17\b\2 #\5\17\b\2!#\5\21\t\2\" \3\2\2\2\"!\3\2\2\2#&\3\2\2\2$\"\3"+
+		"\2\2\2$%\3\2\2\2%\n\3\2\2\2&$\3\2\2\2\'(\t\2\2\2(\f\3\2\2\2)*\t\3\2\2"+
+		"*\16\3\2\2\2+,\t\4\2\2,\20\3\2\2\2-.\t\5\2\2.\22\3\2\2\2/\60\t\6\2\2\60"+
+		"\24\3\2\2\2\61\62\t\7\2\2\62\26\3\2\2\2\63\65\t\b\2\2\64\63\3\2\2\2\65"+
+		"\66\3\2\2\2\66\64\3\2\2\2\66\67\3\2\2\2\678\3\2\2\289\b\f\2\29\30\3\2"+
+		"\2\2\6\2\"$\66\3\b\2\2";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

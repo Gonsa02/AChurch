@@ -16,13 +16,13 @@ public class lcParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, T__1=2, T__2=3, MACRO=4, LLETRA=5, LLETRAMAJUSCULA=6, DIGIT=7, 
-		LAMBDA=8, ASSIGNACIO=9, WS=10;
+		T__0=1, T__1=2, T__2=3, MACRO=4, INFIX=5, LLETRA=6, LLETRAMAJUSCULA=7, 
+		DIGIT=8, LAMBDA=9, ASSIGNACIO=10, WS=11;
 	public static final int
-		RULE_root = 0, RULE_terme = 1, RULE_assignacio = 2;
+		RULE_root = 0, RULE_terme = 1, RULE_assignacio = 2, RULE_macros = 3;
 	private static String[] makeRuleNames() {
 		return new String[] {
-			"root", "terme", "assignacio"
+			"root", "terme", "assignacio", "macros"
 		};
 	}
 	public static final String[] ruleNames = makeRuleNames();
@@ -35,8 +35,8 @@ public class lcParser extends Parser {
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, null, null, "MACRO", "LLETRA", "LLETRAMAJUSCULA", "DIGIT", 
-			"LAMBDA", "ASSIGNACIO", "WS"
+			null, null, null, null, "MACRO", "INFIX", "LLETRA", "LLETRAMAJUSCULA", 
+			"DIGIT", "LAMBDA", "ASSIGNACIO", "WS"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -107,20 +107,20 @@ public class lcParser extends Parser {
 		RootContext _localctx = new RootContext(_ctx, getState());
 		enterRule(_localctx, 0, RULE_root);
 		try {
-			setState(8);
+			setState(10);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(6);
+				setState(8);
 				terme(0);
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(7);
+				setState(9);
 				assignacio();
 				}
 				break;
@@ -173,6 +173,16 @@ public class lcParser extends Parser {
 		}
 		public AbstraccioContext(TermeContext ctx) { copyFrom(ctx); }
 	}
+	public static class InfixContext extends TermeContext {
+		public List<TermeContext> terme() {
+			return getRuleContexts(TermeContext.class);
+		}
+		public TermeContext terme(int i) {
+			return getRuleContext(TermeContext.class,i);
+		}
+		public TerminalNode INFIX() { return getToken(lcParser.INFIX, 0); }
+		public InfixContext(TermeContext ctx) { copyFrom(ctx); }
+	}
 	public static class AplicacioContext extends TermeContext {
 		public List<TermeContext> terme() {
 			return getRuleContexts(TermeContext.class);
@@ -199,7 +209,7 @@ public class lcParser extends Parser {
 			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(25);
+			setState(27);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__0:
@@ -208,11 +218,11 @@ public class lcParser extends Parser {
 				_ctx = _localctx;
 				_prevctx = _localctx;
 
-				setState(11);
-				match(T__0);
-				setState(12);
-				terme(0);
 				setState(13);
+				match(T__0);
+				setState(14);
+				terme(0);
+				setState(15);
 				match(T__1);
 				}
 				break;
@@ -221,26 +231,26 @@ public class lcParser extends Parser {
 				_localctx = new AbstraccioContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(15);
+				setState(17);
 				match(LAMBDA);
-				setState(17); 
+				setState(19); 
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				do {
 					{
 					{
-					setState(16);
+					setState(18);
 					match(LLETRA);
 					}
 					}
-					setState(19); 
+					setState(21); 
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				} while ( _la==LLETRA );
-				setState(21);
+				setState(23);
 				match(T__2);
-				setState(22);
-				terme(3);
+				setState(24);
+				terme(4);
 				}
 				break;
 			case LLETRA:
@@ -248,7 +258,7 @@ public class lcParser extends Parser {
 				_localctx = new VariableContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(23);
+				setState(25);
 				match(LLETRA);
 				}
 				break;
@@ -257,7 +267,7 @@ public class lcParser extends Parser {
 				_localctx = new MacroContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(24);
+				setState(26);
 				match(MACRO);
 				}
 				break;
@@ -265,27 +275,45 @@ public class lcParser extends Parser {
 				throw new NoViableAltException(this);
 			}
 			_ctx.stop = _input.LT(-1);
-			setState(31);
+			setState(36);
 			_errHandler.sync(this);
-			_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
+			_alt = getInterpreter().adaptivePredict(_input,4,_ctx);
 			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					if ( _parseListeners!=null ) triggerExitRuleEvent();
 					_prevctx = _localctx;
 					{
-					{
-					_localctx = new AplicacioContext(new TermeContext(_parentctx, _parentState));
-					pushNewRecursionContext(_localctx, _startState, RULE_terme);
-					setState(27);
-					if (!(precpred(_ctx, 5))) throw new FailedPredicateException(this, "precpred(_ctx, 5)");
-					setState(28);
-					terme(6);
+					setState(34);
+					_errHandler.sync(this);
+					switch ( getInterpreter().adaptivePredict(_input,3,_ctx) ) {
+					case 1:
+						{
+						_localctx = new AplicacioContext(new TermeContext(_parentctx, _parentState));
+						pushNewRecursionContext(_localctx, _startState, RULE_terme);
+						setState(29);
+						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
+						setState(30);
+						terme(7);
+						}
+						break;
+					case 2:
+						{
+						_localctx = new InfixContext(new TermeContext(_parentctx, _parentState));
+						pushNewRecursionContext(_localctx, _startState, RULE_terme);
+						setState(31);
+						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
+						setState(32);
+						match(INFIX);
+						setState(33);
+						terme(4);
+						}
+						break;
 					}
 					} 
 				}
-				setState(33);
+				setState(38);
 				_errHandler.sync(this);
-				_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
+				_alt = getInterpreter().adaptivePredict(_input,4,_ctx);
 			}
 			}
 		}
@@ -301,7 +329,9 @@ public class lcParser extends Parser {
 	}
 
 	public static class AssignacioContext extends ParserRuleContext {
-		public TerminalNode MACRO() { return getToken(lcParser.MACRO, 0); }
+		public MacrosContext macros() {
+			return getRuleContext(MacrosContext.class,0);
+		}
 		public TerminalNode ASSIGNACIO() { return getToken(lcParser.ASSIGNACIO, 0); }
 		public TermeContext terme() {
 			return getRuleContext(TermeContext.class,0);
@@ -318,12 +348,51 @@ public class lcParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(34);
-			match(MACRO);
-			setState(35);
+			setState(39);
+			macros();
+			setState(40);
 			match(ASSIGNACIO);
-			setState(36);
+			setState(41);
 			terme(0);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			_errHandler.reportError(this, re);
+			_errHandler.recover(this, re);
+		}
+		finally {
+			exitRule();
+		}
+		return _localctx;
+	}
+
+	public static class MacrosContext extends ParserRuleContext {
+		public TerminalNode MACRO() { return getToken(lcParser.MACRO, 0); }
+		public TerminalNode INFIX() { return getToken(lcParser.INFIX, 0); }
+		public MacrosContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_macros; }
+	}
+
+	public final MacrosContext macros() throws RecognitionException {
+		MacrosContext _localctx = new MacrosContext(_ctx, getState());
+		enterRule(_localctx, 6, RULE_macros);
+		int _la;
+		try {
+			enterOuterAlt(_localctx, 1);
+			{
+			setState(43);
+			_la = _input.LA(1);
+			if ( !(_la==MACRO || _la==INFIX) ) {
+			_errHandler.recoverInline(this);
+			}
+			else {
+				if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
+				_errHandler.reportMatch(this);
+				consume();
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -347,24 +416,27 @@ public class lcParser extends Parser {
 	private boolean terme_sempred(TermeContext _localctx, int predIndex) {
 		switch (predIndex) {
 		case 0:
-			return precpred(_ctx, 5);
+			return precpred(_ctx, 6);
+		case 1:
+			return precpred(_ctx, 3);
 		}
 		return true;
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\f)\4\2\t\2\4\3\t"+
-		"\3\4\4\t\4\3\2\3\2\5\2\13\n\2\3\3\3\3\3\3\3\3\3\3\3\3\3\3\6\3\24\n\3\r"+
-		"\3\16\3\25\3\3\3\3\3\3\3\3\5\3\34\n\3\3\3\3\3\7\3 \n\3\f\3\16\3#\13\3"+
-		"\3\4\3\4\3\4\3\4\3\4\2\3\4\5\2\4\6\2\2\2+\2\n\3\2\2\2\4\33\3\2\2\2\6$"+
-		"\3\2\2\2\b\13\5\4\3\2\t\13\5\6\4\2\n\b\3\2\2\2\n\t\3\2\2\2\13\3\3\2\2"+
-		"\2\f\r\b\3\1\2\r\16\7\3\2\2\16\17\5\4\3\2\17\20\7\4\2\2\20\34\3\2\2\2"+
-		"\21\23\7\n\2\2\22\24\7\7\2\2\23\22\3\2\2\2\24\25\3\2\2\2\25\23\3\2\2\2"+
-		"\25\26\3\2\2\2\26\27\3\2\2\2\27\30\7\5\2\2\30\34\5\4\3\5\31\34\7\7\2\2"+
-		"\32\34\7\6\2\2\33\f\3\2\2\2\33\21\3\2\2\2\33\31\3\2\2\2\33\32\3\2\2\2"+
-		"\34!\3\2\2\2\35\36\f\7\2\2\36 \5\4\3\b\37\35\3\2\2\2 #\3\2\2\2!\37\3\2"+
-		"\2\2!\"\3\2\2\2\"\5\3\2\2\2#!\3\2\2\2$%\7\6\2\2%&\7\13\2\2&\'\5\4\3\2"+
-		"\'\7\3\2\2\2\6\n\25\33!";
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\r\60\4\2\t\2\4\3"+
+		"\t\3\4\4\t\4\4\5\t\5\3\2\3\2\5\2\r\n\2\3\3\3\3\3\3\3\3\3\3\3\3\3\3\6\3"+
+		"\26\n\3\r\3\16\3\27\3\3\3\3\3\3\3\3\5\3\36\n\3\3\3\3\3\3\3\3\3\3\3\7\3"+
+		"%\n\3\f\3\16\3(\13\3\3\4\3\4\3\4\3\4\3\5\3\5\3\5\2\3\4\6\2\4\6\b\2\3\3"+
+		"\2\6\7\2\62\2\f\3\2\2\2\4\35\3\2\2\2\6)\3\2\2\2\b-\3\2\2\2\n\r\5\4\3\2"+
+		"\13\r\5\6\4\2\f\n\3\2\2\2\f\13\3\2\2\2\r\3\3\2\2\2\16\17\b\3\1\2\17\20"+
+		"\7\3\2\2\20\21\5\4\3\2\21\22\7\4\2\2\22\36\3\2\2\2\23\25\7\13\2\2\24\26"+
+		"\7\b\2\2\25\24\3\2\2\2\26\27\3\2\2\2\27\25\3\2\2\2\27\30\3\2\2\2\30\31"+
+		"\3\2\2\2\31\32\7\5\2\2\32\36\5\4\3\6\33\36\7\b\2\2\34\36\7\6\2\2\35\16"+
+		"\3\2\2\2\35\23\3\2\2\2\35\33\3\2\2\2\35\34\3\2\2\2\36&\3\2\2\2\37 \f\b"+
+		"\2\2 %\5\4\3\t!\"\f\5\2\2\"#\7\7\2\2#%\5\4\3\6$\37\3\2\2\2$!\3\2\2\2%"+
+		"(\3\2\2\2&$\3\2\2\2&\'\3\2\2\2\'\5\3\2\2\2(&\3\2\2\2)*\5\b\5\2*+\7\f\2"+
+		"\2+,\5\4\3\2,\7\3\2\2\2-.\t\2\2\2.\t\3\2\2\2\7\f\27\35$&";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

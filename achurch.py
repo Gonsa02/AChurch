@@ -197,11 +197,19 @@ class TreeVisitor(lcVisitor):
         expressio = taula_macros[macro.getText()]
         return expressio
     
+    def visitInfix(self, ctx):
+        [t1, infix, t2] = list(ctx.getChildren())
+        res1 = self.visit(t1)
+        res2 = self.visit(t2)
+        res_infix = taula_macros[infix.getText()]
+        return Aplicacio(Aplicacio(res_infix,res1), res2)
+
     
     def visitAssignacio(self, ctx):
         [nomMacro, _, terme] = list(ctx.getChildren())
         taula_macros[nomMacro.getText()] = self.visit(terme)
         return None
+    
         
 
 
