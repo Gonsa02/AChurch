@@ -5,6 +5,7 @@ from lcLexer import lcLexer
 from lcParser import lcParser
 from lcVisitor import lcVisitor
 
+taula_macros = {}
 
 @dataclass
 class Variable:
@@ -142,14 +143,17 @@ def redueix(node, limit):
     final = False
     while not final and limit > 0:
         #Comprobem si podem fer alpha conversió, en cas que si la fem.
+        """
         conflicte = buscarConflicte(node)
         if len(conflicte) > 0:
             for i in conflicte:
                 node_aux = alphaReduction(node, i)
                 print(parenthesize(node.funcio) + " → " + parenthesize(node_aux.funcio))
                 node = node_aux
+        """
         #Comprobem si podem fer beta reducció, en cas que si la fem.
         node_aux = checkBetaReduction(node)
+        
         if node_aux != None:
             node_reduction = betaReduction(node_aux)
             print("β-reducció:")
@@ -187,39 +191,40 @@ class TreeVisitor(lcVisitor):
         res1 = self.visit(terme1)
         res2 = self.visit(terme2)
         return Aplicacio(res1, res2)
+    
+    def visitMacro(self, ctx):
+        [macro] = list(ctx.getChildren())
+        expressio = taula_macros[macro.getText()]
+        return expressio
+    
+    
+    def visitAssignacio(self, ctx):
+        [nomMacro, _, terme] = list(ctx.getChildren())
+        taula_macros[nomMacro.getText()] = self.visit(terme)
+        return None
+        
 
 
-input_stream = InputStream(input('? '))
-lexer = lcLexer(input_stream)
-token_stream = CommonTokenStream(lexer)
-parser = lcParser(token_stream)
-tree = parser.root()
-if parser.getNumberOfSyntaxErrors() == 0:
-    visitor = TreeVisitor()
-    #printvisitor = PrintVisitor()
-    #print(tree.toStringTree(recog=parser))
-    #printvisitor.visit(tree)
-    arbreSemantic = visitor.visit(tree)
-    print("Arbre:")
-    print(parenthesize(arbreSemantic))
-    redueix(arbreSemantic, 10)
-else: 
-    print(parser.getNumberOfSyntaxErrors(), 'errors de sintaxi.')
-    print(tree.toStringTree(recog=parser))
-
-"""
 input_stream = InputStream(input('? '))
 while input_stream:
-    lexer = lambdaCalculLexer(input_stream)
+    lexer = lcLexer(input_stream)
     token_stream = CommonTokenStream(lexer)
-    parser = lambdaCalculParser(token_stream)
+    parser = lcParser(token_stream)
     tree = parser.root()
     if parser.getNumberOfSyntaxErrors() == 0:
-        print("OKEY")
+        visitor = TreeVisitor()
+        arbreSemantic = visitor.visit(tree)
+        if arbreSemantic == None:
+            for clau, valor in taula_macros.items():
+                print(clau + " ≡ " + parenthesize(valor))
+        else:
+            print("Arbre:")
+            print(parenthesize(arbreSemantic))
+            redueix(arbreSemantic, 10)
     else: 
         print(parser.getNumberOfSyntaxErrors(), 'errors de sintaxi.')
         print(tree.toStringTree(recog=parser))
-"""
+    input_stream = InputStream(input('? '))
 
 """
 class PrintVisitor(lcVisitor):

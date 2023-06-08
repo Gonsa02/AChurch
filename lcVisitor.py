@@ -1,6 +1,6 @@
-# Generated from lc.g4 by ANTLR 4.12.0
+# Generated from lc.g4 by ANTLR 4.13.0
 from antlr4 import *
-if __name__ is not None and "." in __name__:
+if "." in __name__:
     from .lcParser import lcParser
 else:
     from lcParser import lcParser
@@ -19,6 +19,11 @@ class lcVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by lcParser#macro.
+    def visitMacro(self, ctx:lcParser.MacroContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by lcParser#variable.
     def visitVariable(self, ctx:lcParser.VariableContext):
         return self.visitChildren(ctx)
@@ -31,6 +36,11 @@ class lcVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by lcParser#aplicacio.
     def visitAplicacio(self, ctx:lcParser.AplicacioContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by lcParser#assignacio.
+    def visitAssignacio(self, ctx:lcParser.AssignacioContext):
         return self.visitChildren(ctx)
 
 
