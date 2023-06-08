@@ -69,7 +69,9 @@ def betaReduction(node):
         return substitution(node.funcio.cos, node.funcio.parametre, node.argument)
     elif isinstance(node, Aplicacio):
         return Aplicacio(betaReduction(node.funcio), betaReduction(node.argument))
-    elif isinstance(node, Variable) or isinstance(node, Abstracio):
+    elif isinstance(node, Abstracio):
+        return Abstracio(node.lambdaSymbol, node.parametre, betaReduction(node.cos))
+    elif isinstance(node, Variable):
         return node
     else:
         raise ValueError("Node invàlid")
@@ -87,6 +89,8 @@ def checkBetaReduction(node):
             return checkBetaReduction(node.argument)
         else: 
             return aux
+    elif isinstance(node, Abstracio): #Afegit rapidament, revisar si es correcte
+        return checkBetaReduction(node.cos)
     else:
         return None       
 
@@ -139,6 +143,7 @@ def alphaReduction(node, conflicte):
     print("α-conversió: " + conflicte + " → " + nova_lletra)
     return Aplicacio(substitution(node.funcio, Variable(conflicte), nou_node), node.argument)   
 
+
 def redueix(node, limit):
     final = False
     while not final and limit > 0:
@@ -169,6 +174,7 @@ def redueix(node, limit):
         print(parenthesize(node))
     else:
         print("Nothing")
+
 
 class TreeVisitor(lcVisitor):
 
@@ -203,7 +209,6 @@ class TreeVisitor(lcVisitor):
         res2 = self.visit(t2)
         res_infix = taula_macros[infix.getText()]
         return Aplicacio(Aplicacio(res_infix,res1), res2)
-
     
     def visitAssignacio(self, ctx):
         [nomMacro, _, terme] = list(ctx.getChildren())
