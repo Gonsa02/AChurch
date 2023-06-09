@@ -5,7 +5,9 @@ from lcLexer import lcLexer
 from lcParser import lcParser
 from lcVisitor import lcVisitor
 
+
 taula_macros = {}
+
 
 @dataclass
 class Variable:
@@ -116,6 +118,26 @@ def conjuntNoms(node):
 
 
 """
+    Retorna una conjunt que conté tots els noms de les variables lligades que hi ha a l'abre o subarbre que té com a arrel
+    el node que es passa per paràmetre
+
+"""
+def variablesLligades(node):
+    l = set()
+    if isinstance(node, Abstracio):
+        l.add(node.parametre.nom)
+        l = l.union(variablesLligades(node.cos))
+    elif isinstance(node, Aplicacio):
+        l = l.union(variablesLligades(node.funcio))
+        l = l.union(variablesLligades(node.argument))
+    elif isinstance(node, Variable):
+        return l
+    else:
+        raise ValueError("Node invàlid")
+    return l
+
+
+"""
    Aquesta funcio retorna per ordre alfabetic una lletra que no tingui conflicte amb el conjunt
    que es passa per parametre. 
 """
@@ -128,17 +150,26 @@ def novaLletra(conflicte):
 
     return None
 
-
+"""
 def buscarConflicte(node):
     if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio) and isinstance(node.funcio.cos, Abstracio):
         dreta = conjuntNoms(node.argument)
         esquerra = conjuntNoms(node.funcio.cos)
         return dreta.intersection(esquerra)
     return set()
+"""
 
+def buscarConflicte(node):
+    if isinstance(node, Aplicacio):
+        dreta = conjuntNoms(node.argument)
+        esquerra = variablesLligades(node.funcio)
+        return esquerra.intersection(dreta)
+    return set()
 
 def alphaReduction(node, conflicte):
-    nova_lletra = novaLletra(conflicte)
+    lletres_utilitzades = conjuntNoms(node.funcio)
+    lletres_utilitzades.add(conflicte)
+    nova_lletra = novaLletra(lletres_utilitzades)
     nou_node = Variable(nova_lletra)
     print("α-conversió: " + conflicte + " → " + nova_lletra)
     return Aplicacio(substitution(node.funcio, Variable(conflicte), nou_node), node.argument)   
@@ -148,14 +179,13 @@ def redueix(node, limit):
     final = False
     while not final and limit > 0:
         #Comprobem si podem fer alpha conversió, en cas que si la fem.
-        """
         conflicte = buscarConflicte(node)
         if len(conflicte) > 0:
             for i in conflicte:
                 node_aux = alphaReduction(node, i)
                 print(parenthesize(node.funcio) + " → " + parenthesize(node_aux.funcio))
                 node = node_aux
-        """
+
         #Comprobem si podem fer beta reducció, en cas que si la fem.
         node_aux = checkBetaReduction(node)
         
@@ -217,7 +247,7 @@ class TreeVisitor(lcVisitor):
     
         
 
-
+"""
 input_stream = InputStream(input('? '))
 while input_stream:
     lexer = lcLexer(input_stream)
@@ -238,7 +268,7 @@ while input_stream:
         print(parser.getNumberOfSyntaxErrors(), 'errors de sintaxi.')
         print(tree.toStringTree(recog=parser))
     input_stream = InputStream(input('? '))
-
+"""
 """
 class PrintVisitor(lcVisitor):
 
@@ -269,3 +299,69 @@ class PrintVisitor(lcVisitor):
         [variable] = list(ctx.getChildren())
         print('  ' *  self.nivell + variable.getText())
 """
+
+import logging
+from telegram import Update
+from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    username = update.message.from_user.first_name
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="AChurchBot!\nBenvolgut "+ username + "!")
+
+
+async def author(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="@ Marc Gonzalez Vidal, 2023")
+
+
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="/start\n/help\n/author\n/macros")
+
+
+async def macros(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Macros")
+
+
+async def evaluator(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lexer = lcLexer(InputStream(update.message.text))
+    token_stream = CommonTokenStream(lexer)
+    parser = lcParser(token_stream)
+    tree = parser.root()
+    missatge = ""
+    if parser.getNumberOfSyntaxErrors() == 0:
+        visitor = TreeVisitor()
+        arbreSemantic = visitor.visit(tree)
+        if arbreSemantic == None:
+            missatge = "MACROS"
+            for clau, valor in taula_macros.items():
+                missatge += "\n"+ str(clau) + " ≡ " + parenthesize(valor)
+        else:
+            missatge = "Arbre:\n"+parenthesize(arbreSemantic)
+            redueix(arbreSemantic, 10)
+    else: 
+        missatge = str(parser.getNumberOfSyntaxErrors()) + "errors de sintaxi.\n" + str(tree.toStringTree(recog=parser))
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
+
+if __name__ == '__main__':
+    TOKEN = "6111049756:AAEDkKcpj-f-wa8tmb9wE8ix-X7xLW11k6s"
+
+    application = ApplicationBuilder().token(TOKEN).build()
+    
+    start_handler = CommandHandler('start', start)
+    author_handler = CommandHandler('author', author)
+    help_handler = CommandHandler('help', help)
+    macros_handler = CommandHandler('macros', macros)
+    evaluator_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), evaluator)
+    application.add_handler(start_handler)
+    application.add_handler(author_handler)
+    application.add_handler(help_handler)
+    application.add_handler(macros_handler)
+    application.add_handler(evaluator_handler)
+
+
+    
+    application.run_polling()
