@@ -78,14 +78,14 @@ class TreeVisitor(lcVisitor):
         return None
 
 
-def currificar(lambdaSymbol, variables, cos):
+def currificar(lambdaSymbol: str, variables: list, cos: Terme) -> Abstracio:
     if len(variables) == 1:
         return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), cos)
     else:
         return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), currificar(lambdaSymbol, variables[1:], cos))
 
     
-def parenthesize(node):
+def parenthesize(node: Terme) -> str:
     match node:
         case Variable(nom):
             return nom
@@ -102,51 +102,52 @@ def parenthesize(node):
     Substitution rep el node a partir del cual es farà la substitució, el parametre es el valor
     a substituir i el valor es pel node que es substituirà
 """
-def substitution(node, parametre, valor):
+def substitution(node: Terme, parametre: Variable, valor: Variable) -> Terme:
     match node:
         case Variable(nom):
             if nom == parametre.nom:
                 return valor
             else:
                 return Variable(nom)
-        case Abstracio(lambdaSymbol, param, cos):
-            return Abstracio(lambdaSymbol, substitution(param, parametre, valor), substitution(cos, parametre, valor))
+        case Abstracio(lambdaSymbol, parametre, cos):
+            return Abstracio(lambdaSymbol, substitution(parametre, parametre, valor), substitution(cos, parametre, valor))
         case Aplicacio(funcio, argument):
             return Aplicacio(substitution(funcio, parametre, valor), substitution(argument, parametre, valor))
         case _:
             raise ValueError("Node invàlid")
 
 
-
-def betaReduction(node):
-    if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio):
-        return substitution(node.funcio.cos, node.funcio.parametre, node.argument)
-    elif isinstance(node, Aplicacio):
-        return Aplicacio(betaReduction(node.funcio), betaReduction(node.argument))
-    elif isinstance(node, Abstracio):
-        return Abstracio(node.lambdaSymbol, node.parametre, betaReduction(node.cos))
-    elif isinstance(node, Variable):
-        return node
-    else:
-        raise ValueError("Node invàlid")
+def betaReduction(node: Terme) -> Terme:
+    match node:
+        case Aplicacio(funcio, argument):
+            if isinstance(funcio, Abstracio):
+                return substitution(funcio.cos, funcio.parametre, argument)
+            else:
+                return Aplicacio(betaReduction(funcio), betaReduction(argument))
+        case Abstracio(lambdaSymbol, parametre, cos):
+            return Abstracio(lambdaSymbol, parametre, betaReduction(cos))
+        case Variable(_):
+            return node
+        case _:
+            raise ValueError("Node invàlid")
 
 
 """Retorna el node Aplicacio a partir del cual podem fer una β-reducció en cas que es pugui fer,
    en cas contrari dona None.
 """
-def checkBetaReduction(node):
-    if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio):
-        return node
-    elif isinstance(node, Aplicacio):
-        aux = checkBetaReduction(node.funcio)
-        if aux == None: 
-            return checkBetaReduction(node.argument)
-        else: 
-            return aux
-    elif isinstance(node, Abstracio): #Afegit rapidament, revisar si es correcte
-        return checkBetaReduction(node.cos)
-    else:
-        return None       
+def checkBetaReduction(node: Terme) -> Terme | None:
+    match node:
+        case Aplicacio(funcio, argument):
+            if isinstance(funcio, Abstracio):
+                return node
+            else:
+                aux = checkBetaReduction(funcio)
+                if aux == None:
+                    return checkBetaReduction(argument)
+        case Abstracio(_, _, cos):
+            return checkBetaReduction(cos)
+        case _:
+            return None
 
 
 """
@@ -154,13 +155,13 @@ def checkBetaReduction(node):
     el node que es passa per paràmetre
 
 """
-def conjuntNoms(node):
+def conjuntNoms(node: Terme) -> set:
     match node:
         case Variable(nom):
             return {nom}
         case Aplicacio(funcio, argument):
             return conjuntNoms(funcio) | conjuntNoms(argument)
-        case Abstracio(lambdaSymbol, parametre, cos):
+        case Abstracio(_, parametre, cos):
             return conjuntNoms(parametre) | conjuntNoms(cos)
         case _:
             raise ValueError("Node invàlid")
@@ -172,7 +173,7 @@ def conjuntNoms(node):
     el node que es passa per paràmetre
 
 """
-def variablesLligades(node):
+def variablesLligades(node: Terme) -> set:
     match node:
         case Abstracio(_, parametre, cos):
             return {parametre.nom} | variablesLligades(cos)
@@ -188,7 +189,7 @@ def variablesLligades(node):
    Aquesta funcio retorna per ordre alfabetic una lletra que no tingui conflicte amb el conjunt
    que es passa per parametre. 
 """
-def novaLletra(conflicte):
+def novaLletra(conflicte: set) -> str:
     lletres_alfabet = "abcdefghijklmnopqrstuvwxyz"
 
     for lletra in lletres_alfabet:
@@ -198,7 +199,7 @@ def novaLletra(conflicte):
     return None
 
 
-def buscarConflicte(node):
+def buscarConflicte(node: Terme) -> str:
     match node:
         case Aplicacio(funcio, argument):
             dreta = conjuntNoms(argument)
@@ -208,20 +209,35 @@ def buscarConflicte(node):
             return set()
 
 
-def alphaReduction(node, conflicte):
-    lletres_utilitzades = conjuntNoms(node.funcio)
-    lletres_utilitzades.add(conflicte)
-    nova_lletra = novaLletra(lletres_utilitzades)
-    nou_node = Variable(nova_lletra)
-    print("α-conversió: " + conflicte + " → " + nova_lletra)
-    return Aplicacio(substitution(node.funcio, Variable(conflicte), nou_node), node.argument)
+def alphaReduction(node: Terme, conflicte: str) -> Terme:
+    if isBetaReduction(node):
+        lletres_utilitzades = conjuntNoms(node.funcio)
+        lletres_utilitzades.add(conflicte)
+        nova_lletra = novaLletra(lletres_utilitzades)
+        nou_node = Variable(nova_lletra)
+        print("α-conversió: " + conflicte + " → " + nova_lletra)
+        return Aplicacio(substitution(node.funcio, Variable(conflicte), nou_node), node.argument)
+    else:
+        if isinstance(node, Aplicacio):
+            return Aplicacio(alphaReduction(node.funcio, conflicte), node.argument)
+        else:
+            raise ValueError("Node invàlid")
 
 
-async def redueix(node, limit, update, context):
+def isBetaReduction(node: Terme) -> bool:
+    if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio):
+        return True
+    else:
+        return False
+
+async def redueix(node: Terme, limit: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
     final = False
     while not final and limit > 0:
         #Comprobem si podem fer alpha conversió, en cas que si la fem.
-        conflicte = buscarConflicte(node)
+        node_reduction = checkBetaReduction(node)
+        conflicte = buscarConflicte(node_reduction)
+        if node_reduction and isinstance(node_reduction.funcio, Abstracio):
+                conflicte = conflicte.difference(node_reduction.funcio.parametre.nom)
         if len(conflicte) > 0:
             for i in conflicte:
                 node_aux = alphaReduction(node, i)
@@ -262,22 +278,21 @@ async def redueix(node, limit, update, context):
 async def mostrarImatge(node: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE):
     graf = pydot.Dot(graph_type="graph", rankdir="TB")
 
-    def crearGraf(node: Terme, pare: Terme = None, id_pare = None, diccionari={}):
-
+    def crearGraf(node: Terme, pare: Terme = None, id_pare = None, diccionari={}, nivell = 0):
         id = str(uuid.uuid4())
-        lligada = False
+        info_lligada = False
         match node:
             case Variable(nom):
                 label = nom
-                lligada = diccionari.get(nom)
+                info_lligada = diccionari.get(nom)
             case Abstracio(lambdaSymbol, parametre, cos):
                 label = lambdaSymbol + parametre.nom
-                diccionari[parametre.nom] = id
-                crearGraf(cos, node, id, diccionari)
+                diccionari[parametre.nom] = list((id, nivell))
+                crearGraf(cos, node, id, diccionari, nivell+1)
             case Aplicacio(funcio, argument):
                 label = "@"
-                crearGraf(funcio, node, id, diccionari)
-                crearGraf(argument, node, id, diccionari)
+                crearGraf(funcio, node, id, diccionari, nivell+1)
+                crearGraf(argument, node, id, diccionari, nivell+1)
         
         pydot_node = pydot.Node(id, label=label, shape="plaintext")
         graf.add_node(pydot_node)
@@ -286,14 +301,15 @@ async def mostrarImatge(node: Terme, update: Update, context: ContextTypes.DEFAU
             pydot_edge = pydot.Edge(id_pare, pydot_node)
             graf.add_edge(pydot_edge)
         
-        if lligada:
-            pydot_edge = pydot.Edge(lligada, pydot_node, style="dotted", dir="back")
+        if info_lligada and nivell >= info_lligada[1]:
+            pydot_edge = pydot.Edge(info_lligada[0], pydot_node, style="dotted", dir="back")
             graf.add_edge(pydot_edge)
 
     crearGraf(node)
     graf.write_png("grafs/"+context.user_data["identificador"]+"/output.png")
     await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open("grafs/"+context.user_data["identificador"]+"/output.png", 'rb'))
     netejarDirectori("grafs/"+context.user_data["identificador"]+"/")
+
 
 def crearIdentificadorAleatori():
     identificador = uuid.uuid4()
