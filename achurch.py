@@ -4,7 +4,6 @@ from antlr4 import *
 from lcLexer import lcLexer
 from lcParser import lcParser
 from lcVisitor import lcVisitor
-
 from telegram import Update
 from telegram.ext import filters, ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler
 import pydot
@@ -59,19 +58,19 @@ class TreeVisitor(lcVisitor):
         res1 = self.visit(terme1)
         res2 = self.visit(terme2)
         return Aplicacio(res1, res2)
-    
+
     def visitMacro(self, ctx):
         [macro] = list(ctx.getChildren())
         expressio = self.taula_macros[macro.getText()]
         return expressio
-    
+
     def visitInfix(self, ctx):
         [t1, infix, t2] = list(ctx.getChildren())
         res1 = self.visit(t1)
         res2 = self.visit(t2)
         res_infix = self.taula_macros[infix.getText()]
-        return Aplicacio(Aplicacio(res_infix,res1), res2)
-    
+        return Aplicacio(Aplicacio(res_infix, res1), res2)
+
     def visitAssignacio(self, ctx):
         [nomMacro, _, terme] = list(ctx.getChildren())
         self.taula_macros[nomMacro.getText()] = self.visit(terme)
@@ -84,7 +83,13 @@ def currificar(lambdaSymbol: str, variables: list, cos: Terme) -> Abstracio:
     else:
         return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), currificar(lambdaSymbol, variables[1:], cos))
 
-    
+
+"""
+    Retorna un string que representa l'arbre que té com a arrel
+    el node passat per paràmetre
+"""
+
+
 def parenthesize(node: Terme) -> str:
     match node:
         case Variable(nom):
@@ -97,24 +102,30 @@ def parenthesize(node: Terme) -> str:
             raise ValueError("Node invàlid")
 
 
+"""
+    Substitution rep el node a partir del cual es farà la substitució, el conflicte es la Variable
+    a substituir i el valor es la Variable  per la que es substituirà
+"""
 
-"""
-    Substitution rep el node a partir del cual es farà la substitució, el parametre es el valor
-    a substituir i el valor es pel node que es substituirà
-"""
-def substitution(node: Terme, parametre: Variable, valor: Variable) -> Terme:
+
+def substitution(node: Terme, conflicte: Variable, valor: Terme) -> Terme:
     match node:
         case Variable(nom):
-            if nom == parametre.nom:
+            if nom == conflicte.nom:
                 return valor
             else:
                 return Variable(nom)
         case Abstracio(lambdaSymbol, parametre, cos):
-            return Abstracio(lambdaSymbol, substitution(parametre, parametre, valor), substitution(cos, parametre, valor))
+            return Abstracio(lambdaSymbol, parametre, substitution(cos, conflicte, valor))
         case Aplicacio(funcio, argument):
-            return Aplicacio(substitution(funcio, parametre, valor), substitution(argument, parametre, valor))
+            return Aplicacio(substitution(funcio, conflicte, valor), substitution(argument, conflicte, valor))
         case _:
             raise ValueError("Node invàlid")
+
+
+"""
+    Funcio que retorna una versió Beta reduida del node que es pasa per parametre
+"""
 
 
 def betaReduction(node: Terme) -> Terme:
@@ -132,29 +143,13 @@ def betaReduction(node: Terme) -> Terme:
             raise ValueError("Node invàlid")
 
 
-"""Retorna el node Aplicacio a partir del cual podem fer una β-reducció en cas que es pugui fer,
-   en cas contrari dona None.
-"""
-def checkBetaReduction(node: Terme) -> Terme | None:
-    match node:
-        case Aplicacio(funcio, argument):
-            if isinstance(funcio, Abstracio):
-                return node
-            else:
-                aux = checkBetaReduction(funcio)
-                if aux == None:
-                    return checkBetaReduction(argument)
-        case Abstracio(_, _, cos):
-            return checkBetaReduction(cos)
-        case _:
-            return None
-
-
 """
     Retorna una conjunt que conté tots els noms de les variables que hi ha a l'abre o subarbre que té com a arrel
     el node que es passa per paràmetre
 
 """
+
+
 def conjuntNoms(node: Terme) -> set:
     match node:
         case Variable(nom):
@@ -167,12 +162,12 @@ def conjuntNoms(node: Terme) -> set:
             raise ValueError("Node invàlid")
 
 
-
 """
     Retorna una conjunt que conté tots els noms de les variables lligades que hi ha a l'abre o subarbre que té com a arrel
     el node que es passa per paràmetre
-
 """
+
+
 def variablesLligades(node: Terme) -> set:
     match node:
         case Abstracio(_, parametre, cos):
@@ -187,8 +182,10 @@ def variablesLligades(node: Terme) -> set:
 
 """
    Aquesta funcio retorna per ordre alfabetic una lletra que no tingui conflicte amb el conjunt
-   que es passa per parametre. 
+   que es passa per parametre.
 """
+
+
 def novaLletra(conflicte: set) -> str:
     lletres_alfabet = "abcdefghijklmnopqrstuvwxyz"
 
@@ -199,128 +196,169 @@ def novaLletra(conflicte: set) -> str:
     return None
 
 
-def buscarConflicte(node: Terme) -> str:
+"""
+    Funció que busca on es pot aplicar la alpha conversió i l'aplica si cal
+"""
+
+
+def cercaAlphaConversion(node: Terme, conflicte: str, valor: str, noms_utilitzats: set[str]) -> tuple[Terme, bool]:
     match node:
+        case Variable(_):
+            return node, False
+
         case Aplicacio(funcio, argument):
-            dreta = conjuntNoms(argument)
-            esquerra = variablesLligades(funcio)
-            return esquerra & dreta
-        case _:
-            return set()
+            nova_funcio, modificat1 = cercaAlphaConversion(funcio, conflicte, valor, noms_utilitzats)
+            nou_argument, modificat2 = cercaAlphaConversion(argument, conflicte, valor, noms_utilitzats)
+            return Aplicacio(nova_funcio, nou_argument), modificat1 | modificat2
+
+        case Abstracio(lambdaSymbol, parametre, cos):
+            if parametre.nom in noms_utilitzats and conflicte in conjuntNoms(cos):
+                nou_node = substitution(cos, parametre, Variable(valor))
+                print("α-conversió: " + parametre.nom + " → " + valor)
+                return Abstracio(lambdaSymbol, Variable(valor), nou_node), True
+            else:
+                nou_node, modificat = cercaAlphaConversion(cos, conflicte, valor, noms_utilitzats)
+                return Abstracio(lambdaSymbol, parametre, nou_node), modificat
 
 
-def alphaReduction(node: Terme, conflicte: str) -> Terme:
-    if isBetaReduction(node):
-        lletres_utilitzades = conjuntNoms(node.funcio)
-        lletres_utilitzades.add(conflicte)
-        nova_lletra = novaLletra(lletres_utilitzades)
-        nou_node = Variable(nova_lletra)
-        print("α-conversió: " + conflicte + " → " + nova_lletra)
-        return Aplicacio(substitution(node.funcio, Variable(conflicte), nou_node), node.argument)
-    else:
-        if isinstance(node, Aplicacio):
-            return Aplicacio(alphaReduction(node.funcio, conflicte), node.argument)
-        else:
-            raise ValueError("Node invàlid")
+"""
+    Funció encarregada de preparar i gestionar l'alphaConversió
+"""
 
 
-def isBetaReduction(node: Terme) -> bool:
-    if isinstance(node, Aplicacio) and isinstance(node.funcio, Abstracio):
-        return True
-    else:
-        return False
+async def alphaConversion(funcio: Abstracio, argument: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Terme:
+    variables_lligades = variablesLligades(funcio)
+    noms_utilitzats = conjuntNoms(argument)
+
+    nova_lletra = novaLletra(variables_lligades | noms_utilitzats)
+    alpha_conversio, modificat = cercaAlphaConversion(funcio, funcio.parametre.nom, nova_lletra, noms_utilitzats.difference(funcio.parametre.nom))  # El difference evita alfa conversions innecessàries
+    if modificat:
+        abans_text = parenthesize(funcio)
+        despres_text = parenthesize(alpha_conversio)
+        print(abans_text + " → " + despres_text)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=abans_text + "→α→" + despres_text)
+    return Aplicacio(alpha_conversio, argument)
+
+
+"""
+    Funció que evalua una expressió i aplica les alfa conversions i beta reduccions
+    en cas que de que s'hagi d'aplicar
+"""
+
+
+async def eval(node: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE) -> tuple[Terme, bool]:
+    match node:
+        case Variable(_):
+            return node, False
+
+        case Abstracio(lambdaSymbol, parametre, cos):
+            aux, modificat = await eval(cos, update, context)
+            return Abstracio(lambdaSymbol, parametre, aux), modificat
+
+        case Aplicacio(funcio, argument):
+            if isinstance(funcio, Abstracio):
+                alpha_conversio = await alphaConversion(funcio, argument, update, context)
+                beta_conversio = betaReduction(alpha_conversio)
+                abans_text = parenthesize(Aplicacio(alpha_conversio, argument))
+                despres_text = parenthesize(beta_conversio)
+                print("β-reducció:\n" + abans_text + " → " + despres_text)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=abans_text + "→β→" + despres_text)
+                await mostrarImatge(beta_conversio, update, context)
+                return beta_conversio, True
+            else:
+                aux, modificat = await eval(funcio, update, context)
+                if modificat:
+                    return Aplicacio(aux, argument), True
+                else:
+                    aux, modificat = await eval(argument, update, context)
+                    return Aplicacio(funcio, aux), modificat
+
+
+"""
+    Funció encarregada de gestionar les reduccions de l'expressió
+"""
+
 
 async def redueix(node: Terme, limit: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    final = False
-    while not final and limit > 0:
-        #Comprobem si podem fer alpha conversió, en cas que si la fem.
-        node_reduction = checkBetaReduction(node)
-        conflicte = buscarConflicte(node_reduction)
-        if node_reduction and isinstance(node_reduction.funcio, Abstracio):
-                conflicte = conflicte.difference(node_reduction.funcio.parametre.nom)
-        if len(conflicte) > 0:
-            for i in conflicte:
-                node_aux = alphaReduction(node, i)
-                print(parenthesize(node.funcio) + " → " + parenthesize(node_aux.funcio))
-                missatge = "\n"+ parenthesize(node.funcio) + "→α→" + parenthesize(node_aux.funcio)
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
-                node = node_aux
+    reduccio, modificat = await eval(node, update, context)
 
-        #Comprobem si podem fer beta reducció, en cas que si la fem.
-        node_aux = checkBetaReduction(node)
-        
-        if node_aux != None:
-            node_reduction = betaReduction(node_aux)
-            print("β-reducció:")
-            print(parenthesize(node_aux) + " → " + parenthesize(node_reduction))
-            missatge = parenthesize(node_aux) + "→β→" + parenthesize(node_reduction)
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
-            node = betaReduction(node)
-            await mostrarImatge(node, update, context)
-        else:
-            final = True
+    while modificat and limit > 0:
         limit -= 1
-        if limit == 0:
-            print("...")
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="...")
-    print("Resultat: ")
-    if final:
-        print(parenthesize(node))
-        missatge = parenthesize(node)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
-        await mostrarImatge(node, update, context)
+        reduccio, modificat = await eval(reduccio, update, context)
+
+    if limit == 0:
+        print("...\nResultat:\nNothing")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="...\nResultat:\nNothing")
     else:
-        print("Nothing")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Nothing")
-    return missatge
+        text = "Resultat:\n" + parenthesize(reduccio)
+        print(text)
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+        await mostrarImatge(reduccio, update, context)
+
+
+"""
+    Funció per crear la imatge de l'arbre a partir de l'arrel donada
+"""
 
 
 async def mostrarImatge(node: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE):
     graf = pydot.Dot(graph_type="graph", rankdir="TB")
 
-    def crearGraf(node: Terme, pare: Terme = None, id_pare = None, diccionari={}, nivell = 0):
+    def crearGraf(node: Terme, pare: Terme=None, id_pare=None, diccionari=dict(), nivell=0):
         id = str(uuid.uuid4())
         info_lligada = False
         match node:
             case Variable(nom):
                 label = nom
                 info_lligada = diccionari.get(nom)
+
             case Abstracio(lambdaSymbol, parametre, cos):
                 label = lambdaSymbol + parametre.nom
                 diccionari[parametre.nom] = list((id, nivell))
                 crearGraf(cos, node, id, diccionari, nivell+1)
+
             case Aplicacio(funcio, argument):
                 label = "@"
                 crearGraf(funcio, node, id, diccionari, nivell+1)
                 crearGraf(argument, node, id, diccionari, nivell+1)
-        
+
         pydot_node = pydot.Node(id, label=label, shape="plaintext")
         graf.add_node(pydot_node)
 
         if pare:
             pydot_edge = pydot.Edge(id_pare, pydot_node)
             graf.add_edge(pydot_edge)
-        
+
         if info_lligada and nivell >= info_lligada[1]:
             pydot_edge = pydot.Edge(info_lligada[0], pydot_node, style="dotted", dir="back")
             graf.add_edge(pydot_edge)
 
     crearGraf(node)
     graf.write_png("grafs/"+context.user_data["identificador"]+"/output.png")
-    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open("grafs/"+context.user_data["identificador"]+"/output.png", 'rb'))
-    netejarDirectori("grafs/"+context.user_data["identificador"]+"/")
+    await context.bot.send_photo(chat_id=update.effective_chat.id, photo=open("grafs/" + context.user_data["identificador"] + "/output.png", 'rb'))
+    netejarDirectori("grafs/" + context.user_data["identificador"] + "/")
 
 
 def crearIdentificadorAleatori():
     identificador = uuid.uuid4()
     return str(identificador)
 
-"""Crea el directori que s'utilitzarà per tenir magatzem temporal de les imatges que es crearan dels arbres.
+
+"""
+   Crea el directori que s'utilitzarà per tenir magatzem temporal de les imatges que es crearan dels arbres.
    Utilitzen un hash únic com a directori per a que en cas que hi hagin més usuaris tenir aïllat cadascún al
    seu directori.
 """
+
+
 def prepararDisc(id):
     os.mkdir("grafs/"+str(id))
+
+
+"""
+    Elimina tots els arxius que hi ha dins del directori que està
+    a la ruta que es passa per parametre.
+"""
 
 
 def netejarDirectori(path):
@@ -330,14 +368,35 @@ def netejarDirectori(path):
         if os.path.isfile(ruta_arxiu):
             os.remove(ruta_arxiu)
 
+
+"""
+    Elimina el directori que està a la ruta que es passa per parametre
+    en cas que existeixi
+"""
+
+
 def eliminarDirectori(path):
-    if os.path.exists(path): 
+    if os.path.exists(path):
         shutil.rmtree(path)
 
 
+"""
+    Crea un directori a la ruta que es passa per parametre
+    en cas que no existeixi
+"""
+
+
 def crearDirectori(path):
-    if not os.path.exists(path): 
+    if not os.path.exists(path):
         os.mkdir(path)
+
+
+"""
+    Funció que inicia tot el necessari de la sessió per poder
+    guardar l'informació necessaria per dur a terme les funcionalitats
+    de l'apliació
+"""
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.message.from_user.first_name
@@ -346,22 +405,56 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     identificador = crearIdentificadorAleatori()
     context.user_data["identificador"] = identificador
     prepararDisc(identificador)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="AChurchBot!\nBenvolgut "+ username + "!")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="AChurchBot!\nBenvolgut " + username + "!")
+
+
+"""
+    Funció que implementa la funcionalitat de mostrar a través
+    de telegram l'informació de l'autor
+"""
 
 
 async def author(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="@ Marc Gonzalez Vidal, 2023")
 
 
+"""
+    Funció que implementa la funcionalitat de mostrar a través
+    de telegram l'informació de les comandes que hi ha a l'apliació
+"""
+
+
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="/start\n/help\n/author\n/macros\n/maxSteps numSteps")
+    missatge = (
+        "/start: Inicia la sessió per a començar a utilitzar el Lambda Càlcul.\n"
+        "/help: Mostra totes les comandes del programa.\n"
+        "/author: Mostra l'autor del programa.\n"
+        "/macros: Mostra una taula amb totes les macros definides de la sessió.\n"
+        "/maxSteps (Sense Parametre): Mostra el maxim nombre de reduccions que es faran en l'evaluació de l'expressió. 10 per defecte.\n"
+        "/maxSteps numSteps: Limita el màxim nombre de reduccions que es faran en l'evaluació de l'expressió a numSteps.\n"
+    )
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
+
+
+"""
+    Funció que implementa la funcionalitat de mostrar a través
+    de telegram les macros definides
+"""
 
 
 async def macros(update: Update, context: ContextTypes.DEFAULT_TYPE):
     missatge = "MACROS"
     for clau, valor in context.user_data["macros"].items():
-        missatge += "\n"+ str(clau) + " ≡ " + parenthesize(valor)
+        missatge += "\n" + str(clau) + " ≡ " + parenthesize(valor)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
+
+
+"""
+    Funció que implementa la funcionalitat de mostrar a través
+    de telegram el màxim número de reduccions o modificar-lo
+    en cas que es vulgui
+"""
 
 
 async def maxSteps(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -369,7 +462,7 @@ async def maxSteps(update: Update, context: ContextTypes.DEFAULT_TYPE):
     error = False
     if text == "/maxSteps":
         await context.bot.send_message(chat_id=update.effective_chat.id, text=str(context.user_data["maxSteps"]))
-    elif len(text.split(" ")) == 2: 
+    elif len(text.split(" ")) == 2:
         max_steps = text.split(" ")[1]
 
         regex = r'^[1-9][0-9]*$'
@@ -385,6 +478,12 @@ async def maxSteps(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Instrucció incorrecta, fes /help per veure com s'ha d'executar")
 
 
+"""
+    Funció encarregada de gestionar els inputs de les evaluacions de lambda Càlcul
+    que l'usuari introdueixi per terminal.
+"""
+
+
 async def evaluator(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lexer = lcLexer(InputStream(update.message.text))
     token_stream = CommonTokenStream(lexer)
@@ -393,11 +492,11 @@ async def evaluator(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if parser.getNumberOfSyntaxErrors() == 0:
         visitor = TreeVisitor(context.user_data["macros"])
         arbreSemantic = visitor.visit(tree)
-        if arbreSemantic == None:
+        if arbreSemantic is None:
             missatge = "MACROS"
             for clau, valor in context.user_data["macros"].items():
                 print(clau + " ≡ " + parenthesize(valor))
-                missatge += "\n"+ str(clau) + " ≡ " + parenthesize(valor)
+                missatge += "\n" + str(clau) + " ≡ " + parenthesize(valor)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
         else:
             print("Arbre:")
@@ -408,18 +507,20 @@ async def evaluator(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await redueix(arbreSemantic, context.user_data["maxSteps"], update, context)
     else:
         print(parser.getNumberOfSyntaxErrors(), 'errors de sintaxi.')
-        print(tree.toStringTree(recog=parser)) 
+        print(tree.toStringTree(recog=parser))
         await context.bot.send_message(chat_id=update.effective_chat.id, text="La instrucció introduïda és incorrecta")
         missatge = str(parser.getNumberOfSyntaxErrors()) + "errors de sintaxi.\n" + str(tree.toStringTree(recog=parser))
         await context.bot.send_message(chat_id=update.effective_chat.id, text=missatge)
 
+
 if __name__ == '__main__':
     eliminarDirectori("grafs")
+    # Es crea aquest directori per a que en cas que hi hagi més d'un usuari, no es sobrescriguin les seues imatges amb un subdirectori de id únic
     crearDirectori("grafs")
     TOKEN = "6111049756:AAEDkKcpj-f-wa8tmb9wE8ix-X7xLW11k6s"
 
     application = ApplicationBuilder().token(TOKEN).build()
-    
+
     start_handler = CommandHandler('start', start)
     author_handler = CommandHandler('author', author)
     help_handler = CommandHandler('help', help)
