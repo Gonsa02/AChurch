@@ -27,9 +27,9 @@ Aquest projecte és un bot de Telegram que avalua expressions de càlcul lambda 
 ## Classes  
   
 - Variable: Representa una variable en l'expressió de càlcul lambda  
-- Abstracio: Representa una abstracció en l'expressió de càlcul lambda  
+- Abstraccio: Representa una abstracció en l'expressió de càlcul lambda  
 - Aplicacio: Representa una aplicació en l'expressió de càlcul lambda  
-- Terme: Unió de Variable, Abstracio i Aplicacio  
+- Terme: Unió de Variable, Abstraccio i Aplicacio  
 - TreeVisitor: Un visitant per a l'analitzador ANTLR4 per construir l'arbre d'expressió de càlcul lambda  
   
 ## Funcions  
@@ -85,9 +85,9 @@ Este proyecto es un bot de Telegram que evalúa expresiones de cálculo lambda y
 ## Clases  
   
 - Variable: Representa una variable en la expresión de cálculo lambda  
-- Abstracio: Representa una abstracción en la expresión de cálculo lambda  
+- Abstraccio: Representa una abstracción en la expresión de cálculo lambda  
 - Aplicacio: Representa una aplicación en la expresión de cálculo lambda  
-- Terme: Unión de Variable, Abstracio y Aplicacio  
+- Terme: Unión de Variable, Abstraccio y Aplicacio  
 - TreeVisitor: Un visitante para el analizador ANTLR4 para construir el árbol de expresión de cálculo lambda  
   
 ## Funciones  
@@ -147,9 +147,9 @@ This project is a Telegram bot that evaluates lambda calculus expressions and di
 ## Classes  
   
 - Variable: Represents a variable in the lambda calculus expression  
-- Abstracio: Represents an abstraction in the lambda calculus expression  
+- Abstraccio: Represents an abstraction in the lambda calculus expression  
 - Aplicacio: Represents an application in the lambda calculus expression  
-- Terme: A union of Variable, Abstracio, and Aplicacio  
+- Terme: A union of Variable, Abstraccio, and Aplicacio  
 - TreeVisitor: A visitor for the ANTLR4 parser to construct the lambda calculus expression tree  
   
 ## Functions  

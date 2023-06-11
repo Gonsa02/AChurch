@@ -19,7 +19,7 @@ class Variable:
 
 
 @dataclass
-class Abstracio:
+class Abstraccio:
     lambdaSymbol: str
     parametre: Variable
     cos: Terme
@@ -31,7 +31,7 @@ class Aplicacio:
     argument: Terme
 
 
-Terme = Variable | Abstracio | Aplicacio
+Terme = Variable | Abstraccio | Aplicacio
 
 
 class TreeVisitor(lcVisitor):
@@ -77,11 +77,11 @@ class TreeVisitor(lcVisitor):
         return None
 
 
-def currificar(lambdaSymbol: str, variables: list, cos: Terme) -> Abstracio:
+def currificar(lambdaSymbol: str, variables: list, cos: Terme) -> Abstraccio:
     if len(variables) == 1:
-        return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), cos)
+        return Abstraccio(lambdaSymbol.getText(), Variable(variables[0].getText()), cos)
     else:
-        return Abstracio(lambdaSymbol.getText(), Variable(variables[0].getText()), currificar(lambdaSymbol, variables[1:], cos))
+        return Abstraccio(lambdaSymbol.getText(), Variable(variables[0].getText()), currificar(lambdaSymbol, variables[1:], cos))
 
 
 """
@@ -94,7 +94,7 @@ def parenthesize(node: Terme) -> str:
     match node:
         case Variable(nom):
             return nom
-        case Abstracio(lambdaSymbol, parametre, cos):
+        case Abstraccio(lambdaSymbol, parametre, cos):
             return f"({lambdaSymbol}{parenthesize(parametre)}.{parenthesize(cos)})"
         case Aplicacio(funcio, argument):
             return f"({parenthesize(funcio)}{parenthesize(argument)})"
@@ -115,8 +115,8 @@ def substitution(node: Terme, conflicte: Variable, valor: Terme) -> Terme:
                 return valor
             else:
                 return Variable(nom)
-        case Abstracio(lambdaSymbol, parametre, cos):
-            return Abstracio(lambdaSymbol, parametre, substitution(cos, conflicte, valor))
+        case Abstraccio(lambdaSymbol, parametre, cos):
+            return Abstraccio(lambdaSymbol, parametre, substitution(cos, conflicte, valor))
         case Aplicacio(funcio, argument):
             return Aplicacio(substitution(funcio, conflicte, valor), substitution(argument, conflicte, valor))
         case _:
@@ -131,12 +131,12 @@ def substitution(node: Terme, conflicte: Variable, valor: Terme) -> Terme:
 def betaReduction(node: Terme) -> Terme:
     match node:
         case Aplicacio(funcio, argument):
-            if isinstance(funcio, Abstracio):
+            if isinstance(funcio, Abstraccio):
                 return substitution(funcio.cos, funcio.parametre, argument)
             else:
                 return Aplicacio(betaReduction(funcio), betaReduction(argument))
-        case Abstracio(lambdaSymbol, parametre, cos):
-            return Abstracio(lambdaSymbol, parametre, betaReduction(cos))
+        case Abstraccio(lambdaSymbol, parametre, cos):
+            return Abstraccio(lambdaSymbol, parametre, betaReduction(cos))
         case Variable(_):
             return node
         case _:
@@ -156,7 +156,7 @@ def conjuntNoms(node: Terme) -> set:
             return {nom}
         case Aplicacio(funcio, argument):
             return conjuntNoms(funcio) | conjuntNoms(argument)
-        case Abstracio(_, parametre, cos):
+        case Abstraccio(_, parametre, cos):
             return conjuntNoms(parametre) | conjuntNoms(cos)
         case _:
             raise ValueError("Node invàlid")
@@ -170,7 +170,7 @@ def conjuntNoms(node: Terme) -> set:
 
 def variablesLligades(node: Terme) -> set:
     match node:
-        case Abstracio(_, parametre, cos):
+        case Abstraccio(_, parametre, cos):
             return {parametre.nom} | variablesLligades(cos)
         case Aplicacio(funcio, argument):
             return variablesLligades(funcio) | variablesLligades(argument)
@@ -211,14 +211,14 @@ def cercaAlphaConversion(node: Terme, conflicte: str, valor: str, noms_utilitzat
             nou_argument, modificat2 = cercaAlphaConversion(argument, conflicte, valor, noms_utilitzats)
             return Aplicacio(nova_funcio, nou_argument), modificat1 | modificat2
 
-        case Abstracio(lambdaSymbol, parametre, cos):
+        case Abstraccio(lambdaSymbol, parametre, cos):
             if parametre.nom in noms_utilitzats and conflicte in conjuntNoms(cos):
                 nou_node = substitution(cos, parametre, Variable(valor))
                 print("α-conversió: " + parametre.nom + " → " + valor)
-                return Abstracio(lambdaSymbol, Variable(valor), nou_node), True
+                return Abstraccio(lambdaSymbol, Variable(valor), nou_node), True
             else:
                 nou_node, modificat = cercaAlphaConversion(cos, conflicte, valor, noms_utilitzats)
-                return Abstracio(lambdaSymbol, parametre, nou_node), modificat
+                return Abstraccio(lambdaSymbol, parametre, nou_node), modificat
 
 
 """
@@ -226,7 +226,7 @@ def cercaAlphaConversion(node: Terme, conflicte: str, valor: str, noms_utilitzat
 """
 
 
-async def alphaConversion(funcio: Abstracio, argument: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Terme:
+async def alphaConversion(funcio: Abstraccio, argument: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Terme:
     variables_lligades = variablesLligades(funcio)
     noms_utilitzats = conjuntNoms(argument)
 
@@ -251,12 +251,12 @@ async def eval(node: Terme, update: Update, context: ContextTypes.DEFAULT_TYPE) 
         case Variable(_):
             return node, False
 
-        case Abstracio(lambdaSymbol, parametre, cos):
+        case Abstraccio(lambdaSymbol, parametre, cos):
             aux, modificat = await eval(cos, update, context)
-            return Abstracio(lambdaSymbol, parametre, aux), modificat
+            return Abstraccio(lambdaSymbol, parametre, aux), modificat
 
         case Aplicacio(funcio, argument):
-            if isinstance(funcio, Abstracio):
+            if isinstance(funcio, Abstraccio):
                 alpha_conversio = await alphaConversion(funcio, argument, update, context)
                 beta_conversio = betaReduction(alpha_conversio)
                 abans_text = parenthesize(Aplicacio(alpha_conversio, argument))
@@ -312,7 +312,7 @@ async def mostrarImatge(node: Terme, update: Update, context: ContextTypes.DEFAU
                 label = nom
                 info_lligada = diccionari.get(nom)
 
-            case Abstracio(lambdaSymbol, parametre, cos):
+            case Abstraccio(lambdaSymbol, parametre, cos):
                 label = lambdaSymbol + parametre.nom
                 diccionari[parametre.nom] = list((id, nivell))
                 crearGraf(cos, node, id, diccionari, nivell+1)
